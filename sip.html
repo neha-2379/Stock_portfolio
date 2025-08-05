@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capita - SIP Calculator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f0f0f;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+
+    canvas#graph-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 60px auto;
+      padding: 30px;
+      background: rgba(26, 26, 26, 0.9);
+      border-radius: 15px;
+      box-shadow: 0 0 25px #00ffcc55;
+      backdrop-filter: blur(4px);
+      position: relative;
+      z-index: 2;
+      color: #ffffff;
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 30px;
+      color: #00ffcc;
+      font-size: 28px;
+    }
+
+    .toggle-buttons {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .toggle-buttons button {
+      background: #1a1a1a;
+      color: #00ffcc;
+      border: 1px solid #00ffcc80;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .toggle-buttons button.active,
+    .toggle-buttons button:hover {
+      background: #00ffcc;
+      color: #000;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    .value {
+      float: right;
+      color: #00ffaa;
+    }
+
+    #results {
+      margin-top: 20px;
+      background: #111;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: inset 0 0 10px #00ffaa33;
+    }
+
+    #results p {
+      margin: 8px 0;
+      font-size: 15px;
+    }
+
+    canvas#compareChart {
+      margin-top: 30px;
+      max-height: 300px;
+      width: 100% !important;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 🔄 Animated Stock Line Background -->
+  <canvas id="graph-bg"></canvas>
+
+  <!-- 🔢 SIP Calculator Container -->
+  <div class="container">
+    <h2>Capita SIP vs Lump-Sum Calculator</h2>
+
+    <div class="toggle-buttons">
+      <button id="sipBtn" class="active" onclick="setMode('sip')">SIP</button>
+      <button id="lumpBtn" onclick="setMode('lump')">Lump-Sum</button>
+    </div>
+
+    <div class="input-group" id="sipInput">
+      <label>Monthly Investment (₹): <span class="value" id="monthlyVal">5000</span></label>
+      <input type="range" id="monthly" min="1000" max="100000" step="500" value="5000"/>
+    </div>
+
+    <div class="input-group" id="lumpInput" style="display:none;">
+      <label>One-Time Investment (₹): <span class="value" id="lumpVal">100000</span></label>
+      <input type="range" id="lump" min="5000" max="1000000" step="1000" value="100000"/>
+    </div>
+
+    <div class="input-group">
+      <label>Expected Annual Return (%): <span class="value" id="rateVal">12</span></label>
+      <input type="range" id="rate" min="1" max="30" step="0.5" value="12"/>
+    </div>
+
+    <div class="input-group">
+      <label>Investment Duration (Years): <span class="value" id="yearsVal">10</span></label>
+      <input type="range" id="years" min="1" max="40" step="1" value="10"/>
+    </div>
+
+    <div id="results">
+      <p><strong>SIP Total Value:</strong> ₹<span id="sipFV">0</span> (Invested: ₹<span id="sipInvested">0</span>)</p>
+      <p><strong>Lump-Sum Total Value:</strong> ₹<span id="lumpFV">0</span> (Invested: ₹<span id="lumpInvested">0</span>)</p>
+    </div>
+
+    <canvas id="compareChart"></canvas>
+  </div>
+
+  <!-- 📊 Chart + SIP Logic -->
+  <script>
+    let mode = 'sip';
+
+    const sipBtn = document.getElementById("sipBtn");
+    const lumpBtn = document.getElementById("lumpBtn");
+    const sipInput = document.getElementById("sipInput");
+    const lumpInput = document.getElementById("lumpInput");
+
+    const monthly = document.getElementById("monthly");
+    const lump = document.getElementById("lump");
+    const rate = document.getElementById("rate");
+    const years = document.getElementById("years");
+
+    const monthlyVal = document.getElementById("monthlyVal");
+    const lumpVal = document.getElementById("lumpVal");
+    const rateVal = document.getElementById("rateVal");
+    const yearsVal = document.getElementById("yearsVal");
+
+    const sipFVText = document.getElementById("sipFV");
+    const lumpFVText = document.getElementById("lumpFV");
+    const sipInvestedText = document.getElementById("sipInvested");
+    const lumpInvestedText = document.getElementById("lumpInvested");
+
+    const ctx = document.getElementById("compareChart").getContext("2d");
+    let chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Invested Amount', 'Final Value'],
+        datasets: [
+          {
+            label: 'SIP',
+            backgroundColor: '#00ffaa',
+            data: [0, 0]
+          },
+          {
+            label: 'Lump-Sum',
+            backgroundColor: '#00bfff',
+            data: [0, 0]
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            labels: { color: '#fff' }
+          }
+        },
+        scales: {
+          y: {
+            ticks: { color: '#fff' },
+            beginAtZero: true
+          },
+          x: {
+            ticks: { color: '#fff' }
+          }
+        }
+      }
+    });
+
+    function setMode(selected) {
+      mode = selected;
+      sipBtn.classList.toggle("active", mode === "sip");
+      lumpBtn.classList.toggle("active", mode === "lump");
+      sipInput.style.display = mode === "sip" ? "block" : "none";
+      lumpInput.style.display = mode === "lump" ? "block" : "none";
+      update();
+    }
+
+    function updateLabels() {
+      monthlyVal.textContent = monthly.value;
+      lumpVal.textContent = lump.value;
+      rateVal.textContent = rate.value;
+      yearsVal.textContent = years.value;
+    }
+
+    function update() {
+      updateLabels();
+
+      const r = parseFloat(rate.value) / 100 / 12;
+      const n = parseInt(years.value) * 12;
+      const monthlyAmt = parseFloat(monthly.value);
+      const lumpAmt = parseFloat(lump.value);
+
+      const sipFV = monthlyAmt * (((Math.pow(1 + r, n) - 1) / r) * (1 + r));
+      const sipInvested = monthlyAmt * n;
+      const lumpFV = lumpAmt * Math.pow(1 + (parseFloat(rate.value) / 100), parseInt(years.value));
+
+      sipFVText.textContent = Math.round(sipFV).toLocaleString();
+      sipInvestedText.textContent = Math.round(sipInvested).toLocaleString();
+      lumpFVText.textContent = Math.round(lumpFV).toLocaleString();
+      lumpInvestedText.textContent = Math.round(lumpAmt).toLocaleString();
+
+      chart.data.datasets[0].data = [sipInvested, sipFV];
+      chart.data.datasets[1].data = [lumpAmt, lumpFV];
+      chart.update();
+    }
+
+    [monthly, lump, rate, years].forEach(input => input.addEventListener("input", update));
+    update();
+  </script>
+
+  <!-- 📉 Stock Line Animation Script (your original) -->
+  <script>
+    const canvas = document.getElementById("graph-bg");
+    const ctx2 = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let points = [];
+    let spacing = 100;
+
+    for (let x = 0; x < canvas.width + spacing; x += spacing) {
+      let y = canvas.height / 2 + Math.random() * 100 - 50;
+      points.push({ x, y });
+    }
+
+    function drawGraph() {
+      ctx2.clearRect(0, 0, canvas.width, canvas.height);
+      ctx2.beginPath();
+      ctx2.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length; i++) {
+        ctx2.lineTo(points[i].x, points[i].y);
+      }
+      ctx2.strokeStyle = '#00ffcc';
+      ctx2.lineWidth = 2;
+      ctx2.shadowBlur = 10;
+      ctx2.shadowColor = '#00ffcc';
+      ctx2.stroke();
+      ctx2.shadowBlur = 0;
+    }
+
+    function animate() {
+      for (let i = 0; i < points.length; i++) {
+        points[i].y += Math.random() * 4 - 2;
+        points[i].x -= 0.5;
+        if (points[i].x < -spacing) {
+          points[i].x = canvas.width;
+          points[i].y = canvas.height / 2 + Math.random() * 100 - 50;
+        }
+      }
+      drawGraph();
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+
+</body>
+</html>

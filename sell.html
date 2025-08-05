@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capita - Sell Stocks</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      background: #0f0f0f;
+      color: #ffffff;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 100px auto;
+      padding: 20px;
+      background: rgba(15, 15, 15, 0.9);
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffcc30;
+    }
+
+    h2 {
+      text-align: center;
+      color: #00ffcc;
+      margin-bottom: 30px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #00ffcc30;
+    }
+
+    th {
+      color: #00ffcc;
+      background: #1a1a1a;
+    }
+
+    td input[type=number] {
+      width: 60px;
+      padding: 5px;
+      background: #222;
+      color: #fff;
+      border: 1px solid #00ffcc80;
+      border-radius: 4px;
+    }
+
+    button {
+      padding: 6px 12px;
+      background: #00ffcc;
+      color: #0f0f0f;
+      font-weight: bold;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    button:hover {
+      background: #00ffaa;
+    }
+
+    .confirmation {
+      margin-top: 20px;
+      color: #ffcc00;
+      text-align: center;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="graph-bg"></canvas>
+
+  <div class="container">
+    <h2>Sell Stocks</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Stock</th>
+          <th>Quantity Owned</th>
+          <th>Current Price</th>
+          <th>Sell Quantity</th>
+          <th>Sell</th>
+        </tr>
+      </thead>
+      <tbody id="sellTable">
+        <!-- Owned stocks will appear here -->
+      </tbody>
+    </table>
+    <div id="confirmation" class="confirmation"></div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("graph-bg");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let points = [];
+    let spacing = 100;
+
+    for (let x = 0; x < canvas.width + spacing; x += spacing) {
+        let y = canvas.height / 2 + Math.random() * 100 - 50;
+        points.push({ x, y });
+    }
+
+    function drawGraph() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = '#00ffcc';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ffcc';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function animate() {
+        for (let i = 0; i < points.length; i++) {
+            points[i].y += Math.random() * 4 - 2;
+            points[i].x -= 0.5;
+            if (points[i].x < -spacing) {
+                points[i].x = canvas.width;
+                points[i].y = canvas.height / 2 + Math.random() * 100 - 50;
+            }
+        }
+        drawGraph();
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    // Dummy owned stock data (simulate DB data)
+    const ownedStocks = [
+      { symbol: "RELIANCE", qty: 10, currentPrice: 2700 },
+      { symbol: "INFY", qty: 5, currentPrice: 1400 },
+      { symbol: "TATAMOTORS", qty: 3, currentPrice: 780 },
+    ];
+
+    const sellTable = document.getElementById("sellTable");
+
+    ownedStocks.forEach((stock, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${stock.symbol}</td>
+        <td>${stock.qty}</td>
+        <td>₹${stock.currentPrice}</td>
+        <td><input type="number" id="sellQty-${index}" min="1" max="${stock.qty}"/></td>
+        <td><button onclick="sellStock(${index})">Sell</button></td>
+      `;
+      sellTable.appendChild(row);
+    });
+
+    function sellStock(index) {
+      const qtyInput = document.getElementById(`sellQty-${index}`);
+      const qtyToSell = parseInt(qtyInput.value);
+      const stock = ownedStocks[index];
+
+      if (!qtyToSell || qtyToSell <= 0 || qtyToSell > stock.qty) {
+        alert("Enter a valid quantity to sell.");
+        return;
+      }
+
+      const amount = qtyToSell * stock.currentPrice;
+
+      document.getElementById("confirmation").innerText =
+        `✔️ Sold ${qtyToSell} shares of ${stock.symbol} for ₹${amount.toLocaleString()}`;
+
+      // In real app, update DB and refresh holdings
+    }
+  </script>
+</body>
+</html>

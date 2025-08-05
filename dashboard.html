@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capita - Dashboard</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f0f0f;
+      font-family: 'Segoe UI', sans-serif;
+      overflow-x: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    header {
+      z-index: 2;
+      position: relative;
+      background: #0f0f0f;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #00ffcc;
+      font-size: 1.5rem;
+      box-shadow: 0 2px 8px #00ffcc20;
+    }
+
+    header .user-icon {
+      width: 30px;
+      height: 30px;
+      background: #00ffcc;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .quote-banner {
+      margin: 30px auto;
+      text-align: center;
+      color: #ffffffcc;
+      font-size: 1.4rem;
+      z-index: 2;
+      position: relative;
+    }
+
+    .cards-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+      padding: 40px 20px;
+      z-index: 2;
+      position: relative;
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #00ffcc40;
+      border-radius: 12px;
+      width: 220px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #00ffcc;
+      font-size: 1.2rem;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+      box-shadow: 0 0 15px #00ffcc20;
+    }
+
+    .card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 0 20px #00ffcc80;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="graph-bg"></canvas>
+
+  <header>
+    Capita Dashboard
+    <div class="user-icon" onclick="window.location.href='profile.html'"></div>
+  </header>
+
+  <div class="quote-banner">Indian Market at Your Fingertips</div>
+
+  <div class="cards-container">
+    <div class="card" onclick="location.href='buy.html'">Buy Stocks</div>
+    <div class="card" onclick="location.href='sell.html'">Sell Stocks</div>
+    <div class="card" onclick="location.href='sip.html'">SIP Calculator</div>
+    <div class="card" onclick="alert('Coming soon')">Market Trends</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("graph-bg");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let points = [];
+    let spacing = 100;
+
+    for (let x = 0; x < canvas.width + spacing; x += spacing) {
+        let y = canvas.height / 2 + Math.random() * 100 - 50;
+        points.push({ x, y });
+    }
+
+    function drawGraph() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = '#00ffcc';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ffcc';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function animate() {
+        for (let i = 0; i < points.length; i++) {
+            points[i].y += Math.random() * 4 - 2;
+            points[i].x -= 0.5;
+            if (points[i].x < -spacing) {
+                points[i].x = canvas.width;
+                points[i].y = canvas.height / 2 + Math.random() * 100 - 50;
+            }
+        }
+        drawGraph();
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

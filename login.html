@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Capita - Login</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #0f0f0f;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+    }
+
+    canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+
+    .login-container {
+      position: relative;
+      z-index: 1;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .login-box {
+      background: rgba(15, 15, 15, 0.9);
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #00ffcc;
+      color: white;
+      width: 300px;
+      text-align: center;
+    }
+
+    .login-box h2 {
+      margin-bottom: 20px;
+      color: #00ffcc;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      background: #1f1f1f;
+      border: 1px solid #00ffcc;
+      border-radius: 6px;
+      color: white;
+      font-size: 14px;
+    }
+
+    .login-box button {
+      background: #00ffcc;
+      color: #0f0f0f;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: 0.3s ease;
+      font-weight: bold;
+    }
+
+    .login-box button:hover {
+      background: #00ffaa;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="graph-bg"></canvas>
+  <div class="login-container">
+    <div class="login-box">
+      <h2>Login to Capita</h2>
+      <input type="text" id="name" placeholder="Enter your name" />
+      <input type="email" id="email" placeholder="Enter your email" />
+      <input type="password" id="password" placeholder="Enter your password" />
+      <button onclick="login()">Login</button>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("graph-bg");
+    const ctx = canvas.getContext("2d");
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    let points = [];
+    let spacing = 100;
+
+    for (let x = 0; x < canvas.width + spacing; x += spacing) {
+        let y = canvas.height / 2 + Math.random() * 100 - 50;
+        points.push({ x, y });
+    }
+
+    function drawGraph() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        ctx.moveTo(points[0].x, points[0].y);
+        for (let i = 1; i < points.length; i++) {
+            ctx.lineTo(points[i].x, points[i].y);
+        }
+        ctx.strokeStyle = '#00ffcc';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ffcc';
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function animate() {
+        for (let i = 0; i < points.length; i++) {
+            points[i].y += Math.random() * 4 - 2;
+            points[i].x -= 0.5;
+            if (points[i].x < -spacing) {
+                points[i].x = canvas.width;
+                points[i].y = canvas.height / 2 + Math.random() * 100 - 50;
+            }
+        }
+        drawGraph();
+        requestAnimationFrame(animate);
+    }
+
+    animate();
+
+    function login() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      if (!name || !email || !password) {
+        alert('Please fill all the fields');
+        return;
+      }
+
+      // In a real app, you'd call a backend API here
+      // For now, just simulate redirect
+      window.location.href = 'dashboard.html';
+    }
+  </script>
+</body>
+</html>
